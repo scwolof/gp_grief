@@ -59,3 +59,19 @@ Thumbs.db
 # ################
 .ipynb_checkpoints/
 octave-workspace
+
+# Other, by Simon Olofsson
+##########################
+*.pyo
+*.egg-info
+.coverage
+*.cover
+__pycache__
+.cache
+.eggs
+.hypothesis
+.tox
+htmlcov
+venv
+docs/buildi
+.pytest_cache
