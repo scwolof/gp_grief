@@ -791,7 +791,6 @@ class RowColKhatriRaoMatrix(object):
 			if sparse.issparse(self.C[i_d]): 
 				# have to treat this differently as of numpy 1.7
 				# see http://stackoverflow.com/questions/31040188/
-				#	  dot-product-between-1d-numpy-array-and-scipy-sparse-matrix
 				rows_1d = self.R[i_d][i_rows,:]  *  self.C[i_d]
 			else:
 				rows_1d = self.R[i_d][i_rows,:].dot(self.C[i_d])
@@ -857,7 +856,6 @@ class RowColKhatriRaoMatrixTransposed(RowColKhatriRaoMatrix):
 		if sparse.issparse(self.C[0]): 
 			# have to treat this differently as of numpy 1.7
 			# see http://stackoverflow.com/questions/31040188/
-			# 		dot-product-between-1d-numpy-array-and-scipy-sparse-matrix
 			cols = self.R[0] * self.C[0][:,i_rows]
 		else:
 			cols = self.R[0].dot(self.C[0][:,i_rows])
