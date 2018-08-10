@@ -358,7 +358,7 @@ class KronMatrix(object):
         p is n_eigs and m is the size of each submatrix in eigs (such that eigs has size m^d).
         """
         assert eigs.ndim == 1, "eigs must be a 1D KronMatrix"
-        assert isinstance(n_eigs, (int,long, np.int32)), "n_eigs=%s must be an integer" % repr(n_eigs)
+        assert isinstance(n_eigs, (int, np.int32)), "n_eigs=%s must be an integer" % repr(n_eigs)
         assert n_eigs >= 1, "must use at least 1 eigenvalue"
         assert n_eigs <= eigs.shape[0], "n_eigs is greater then the total number of eigenvalues"
         assert mode == 'largest' or mode == 'smallest'
@@ -899,7 +899,59 @@ class Array:
         return self.A
 
 
-def expand_SKC(S, K, C, logged=True):
+
+
+
+
+class SelectionMatrixSparse:
+    """
+    allows efficient multiplication with a selection matrix and 
+    its transpose where we never want to explictly form a vector 
+    of full size because it is too large
+    """
+    ndim = 2
+
+    def __init__(self, indices):
+        """
+        creates a selection matrix with one nonzero entry per row
+
+        Inputs:
+            indices : bool array or tuple
+                specifies the location of the non-zero in each row.
+                must be (selection_inds, size) where selection inds is 
+                a 1d int array and size is an int
+        """
+        assert isinstance(indices, tuple)
+        assert len(indices) == 2
+        assert indices[0].ndim == 1
+        self.shape = [indices[0].size, indices[1]]
+        self.indices = indices[0]
+        self.unique, self.unique_inverse = np.unique(
+                                            self.indices, return_inverse=True)
+
+    def mul(self,x):
+        """ matrix product """
+        assert x.ndim == 2
+        return x[self.indices,:]
+    dot = __mul__ = mul
+
+    def mul_unique(self, x):
+        """
+        matrix product with the unique sliced elements of x
+        after mul_unique has been called, to recover the full, 
+        non-unique entires then `full = unique[S.unique_inverse]`
+        """
+        assert x.ndim == 2
+        return x[self.unique,:]
+
+    def __getitem__(self, key):
+        if isinstance(key,tuple): # only care about first index
+            key = key[0]
+        return SelectionMatrixSparse(
+            indices=(np.atleast_1d(self.indices[key]),self.shape[1]))
+
+
+def expand_SKC(S, K, C):
     """
     Expand selection matrix * kron matrix * column-partitioned KR matrix
 
@@ -907,29 +959,16 @@ def expand_SKC(S, K, C, logged=True):
         S : list, row KR matrix of selection matricies
         K : list, kron matix
         C : list, column partitioned Khatri-Rao matrix
-        logged : if logged then returns the log of the rows which is more numerically stable
     """
-    assert isinstance(S, (list,np.ndarray))
+    assert isinstance(S, (list, np.ndarray))
     assert isinstance(S[0], SelectionMatrixSparse)
-    assert isinstance(K, (list,np.ndarray))
-    assert isinstance(C, (list,np.ndarray))
-    if logged:
-        log_prod = 0.
-        sign = 1.
-    else:
-        prod = 1.
+    assert isinstance(K, (list, np.ndarray))
+    assert isinstance(C, (list, np.ndarray))
+    log_prod = 0.
+    sign = 1.
     for s,k,c in zip(S, K, C):
-        x_unique = s.mul_unique(k).dot(c) # just compute the unique rows of the product
-        if logged:
-            sign *= np.int32(np.sign(x_unique))[s.unique_inverse]
-            x_unique[x_unique == 0] = 1. # if there's a zero then it doesn't matter what this value is
-            log_prod += np.log(np.abs(x_unique))[s.unique_inverse]
-        else:
-            prod *= x_unique[s.unique_inverse]
-    if logged:
-        return log_prod, sign
-    else:
-        return prod
-
-
-
+        x_unique = s.mul_unique(k).dot(c)
+        sign    *= np.int32(np.sign(x_unique))[s.unique_inverse]
+        x_unique[x_unique == 0] = 1.
+        log_prod += np.log(np.abs(x_unique))[s.unique_inverse]
+    return log_prod, sign
