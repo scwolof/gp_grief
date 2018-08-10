@@ -38,7 +38,7 @@ class KronMatrix(object):
 		self.square = self.ndim==2 and self.shape[0]==self.shape[1]
 		self.sym = sym
 		if sym:
-			assert np.array_equal(self.sshape[:,0],self.sshape[:,1]), 
+			assert np.array_equal(self.sshape[:,0],self.sshape[:,1]),\
 				'this matrix cannot be symmetric: it is not square'
 			self = self.ensure_fortran()
 
@@ -315,7 +315,7 @@ class KronMatrix(object):
 			if hasattr(Ui, "solve_chol"):
 				y = Ui.solve_chol(y.T)
 			else:
-				lt = {'a'=Ui, 'lower':False, 'overwrite_b':True}
+				lt = {'a':Ui, 'lower':False, 'overwrite_b':True}
 				# y = Ui' \ y'
 				#y = la.solve_triangular(a=Ui, b=y.T, trans='T', lower=False, overwrite_b=True) 
 				y = la.solve_triangular(b=y.T, trans='T', **lt) 
@@ -385,7 +385,7 @@ class KronMatrix(object):
 		in eigs (such that eigs has size m^d).
 		"""
 		assert eigs.ndim == 1, "eigs must be a 1D KronMatrix"
-		assert isinstance(n_eigs, (int, np.int32)), 
+		assert isinstance(n_eigs, (int, np.int32)),\
 			"n_eigs=%s must be an integer" % repr(n_eigs)
 		assert n_eigs >= 1, "must use at least 1 eigenvalue"
 		assert n_eigs <= eigs.shape[0], "n_eigs > number of eigenvalues"
@@ -608,7 +608,7 @@ class BlockMatrix(object):
 		# ensure the shapes are consistent for all partitions
 		for i in range(self.block_shape[0]):
 			for j in range(self.block_shape[1]):
-				assert np.all(A[i,j].shape == self.partition_shape(i,j)), 
+				assert np.all(A[i,j].shape == self.partition_shape(i,j)),\
 					"A[%d,%d].shape should be %s, not %s"\
 					% (i,j,repr(self.partition_shape(i,j)),repr(A[i,j].shape))
 
@@ -746,7 +746,7 @@ class RowColKhatriRaoMatrix(object):
 			self.R = R
 			self.C = np.empty(self.d,dtype=object)
 			for i in range(self.d): # ensure submatricies are consistent
-				assert K[i].shape[0] == K[i].shape[1] == R[i].shape[1], 
+				assert K[i].shape[0] == K[i].shape[1] == R[i].shape[1],\
 					"K must be a square Kronecker product matrix,"\
 					+"and must be consistent with R"
 				self.C[i] = K[i].dot(C[i])
@@ -967,4 +967,37 @@ class Array:
 	def expand(self):
 		return self.A
 
+
+def expand_SKC(S, K, C, logged=True):
+    """
+    Expand selection matrix * kron matrix * column-partitioned KR matrix
+
+    Inputs:
+        S : list, row KR matrix of selection matricies
+        K : list, kron matix
+        C : list, column partitioned Khatri-Rao matrix
+        logged : if logged, return log of rows, which is numerically more stable
+    """
+    assert isinstance(S, (list,np.ndarray))
+    assert isinstance(S[0], SelectionMatrixSparse)
+    assert isinstance(K, (list,np.ndarray))
+    assert isinstance(C, (list,np.ndarray))
+    if logged:
+        log_prod = 0.
+        sign = 1.
+    else:
+        prod = 1.
+    for s,k,c in zip(S, K, C):
+    	# just compute the unique rows of the product
+        x_unique = s.mul_unique(k).dot(c)
+        if logged:
+            sign *= np.int32(np.sign(x_unique))[s.unique_inverse]
+            x_unique[x_unique == 0] = 1.
+            log_prod += np.log(np.abs(x_unique))[s.unique_inverse]
+        else:
+            prod *= x_unique[s.unique_inverse]
+    if logged:
+        return log_prod, sign
+    else:
+        return prod
 
