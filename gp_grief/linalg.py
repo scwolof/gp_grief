@@ -9,13 +9,14 @@ import sys
 
 def solve_schur(Q,t,x,shift=0.0):
     """
-    solves shifted linear system of equations (K+shift*I)y=x using the schur decomposition of K
+    solves shifted linear system of equations (K+shift*I)y = x 
+    using the schur decomposition of K
 
     Inputs:
         Q : (N,N) unitary KronMatrix containing the eigenvectors of K
         t : (N,) array containing corresponding eigenvalues of K.
-            This can be computed from the diagonal matrix T returned by schur (such that Q*T*Q.T = K) as
-            t = T.diag()
+            This can be computed from the diagonal matrix T returned by schur 
+            (such that Q*T*Q.T = K) as t = T.diag()
         x :   (N,1) matrix
         shift : float corresponding to the shift to be applied to the system
 
@@ -44,15 +45,15 @@ def solve_chol(U,x):
     """
     if x.shape != (U.shape[0],1):
         raise ValueError('x is the wrong shape, must be (%d,1)' % U.shape[0])
-    y = solve_triangular(U, x, trans=1, lower=False, check_finite=False) # y = Ui' \ x
-    y = solve_triangular(U, y, trans=0, lower=False, check_finite=False) # Ui \ y
+    y = solve_triangular(U, x, trans=1, lower=False, check_finite=False)
+    y = solve_triangular(U, y, trans=0, lower=False, check_finite=False)
     return y
 
 
 class solver_counter:
     """
-    counter for pcg, gmres, ... scipy routines since they don't keep count of iterations. see here:
-        http://stackoverflow.com/questions/33512081/getting-the-number-of-iterations-of-scipys-gmres-iterative-method
+    counter for pcg, gmres, ... scipy routines since they don't keep 
+    count of iterations. see here: http://stackoverflow.com/questions/33512081/
     """
 
     def __init__(self, disp=True):
@@ -95,7 +96,7 @@ def uniquetol(x, tol=1e-6, relative=False):
     Inputs:
         x : 1d array
         tol : threshold tolerance. relative changes this behavour
-        relative : if relative is true then the tolerance is scaled by the range of the data
+        relative : if true then the tolerance is scaled by the range of the data
     """
     assert x.ndim == 1
     if relative: # then scale tol
@@ -104,13 +105,16 @@ def uniquetol(x, tol=1e-6, relative=False):
 
 
 class LogexpTransformation:
-    """ apply log transformation to positive parameters for optimization """
+    """ 
+    apply log transformation to positive parameters for optimization 
+    """
     _lim_val = 36.
     _log_lim_val = np.log(np.finfo(np.float64).max)
 
 
     def inverse_transform(self, x):
-        return np.where(x > self._lim_val, x, np.log1p(np.exp(np.clip(x, -self._log_lim_val, self._lim_val))))
+        return np.where(x > self._lim_val, x, np.log1p(
+                        np.exp(np.clip(x, -self._log_lim_val, self._lim_val))))
 
 
     def transform(self, f):
