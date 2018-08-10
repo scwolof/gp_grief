@@ -49,7 +49,7 @@ class lognorm(RandomVariable):
             # only one real positive root
             expsig2 = np.real(expsig2[
                     np.logical_and(np.isreal(expsig2), expsig2 > 0)]).squeeze() 
-            assert expsig2.size == 1, 
+            assert expsig2.size == 1,\
                     "error in the polynomial root finding for lognormal mode"
             lognorm_sig = np.sqrt(np.log(expsig2))
             lognorm_scale = float(lognorm_mode) * expsig2
@@ -99,7 +99,7 @@ class StreamMeanVar(object):
             assert np.ndim(datum) <= 1
             self.n_streams = np.size(datum)
         else: # else if not first iteration
-            assert np.shape(datum) == (self.n_streams,), 
+            assert np.shape(datum) == (self.n_streams,),\
                 "number of streams inconsistent with previous inclusions"
         self.n += 1
         self.delta = datum - self.mean
