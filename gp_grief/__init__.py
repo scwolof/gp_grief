@@ -9,7 +9,7 @@ from . import grid
 def debug():
     """
     Sets up the package for debugging. This includes:
-        * remove existing logging handlers and sets the handler level to logging.DEBUG
+        * remove existing logging handlers and set handler level to logging.DEBUG
     """
     # First, remove all handlers associated with the root logger object.
     for handler in logging.root.handlers[:]:
@@ -25,7 +25,7 @@ def debug():
 __all__ = filter(lambda s:not s.startswith('_'), dir())
 __version__ = '1.0+'
 
-# set up logging (note if a handler has already been set then this won't do anything)
+# set up logging (if handler has already been set then this won't do anything)
 import logging
 import sys
 logging.basicConfig(stream=sys.stdout,
