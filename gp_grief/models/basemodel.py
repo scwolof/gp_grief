@@ -3,6 +3,8 @@ from ..linalg import solver_counter, LogexpTransformation
 
 # numpy/scipy stuff 
 import numpy as np
+from numpy.linalg.linalg import LinAlgError
+from numpy.testing import assert_array_almost_equal
 from scipy.optimize import fmin_l_bfgs_b
 
 # development stuff
@@ -309,7 +311,7 @@ class BaseModel (object):
         """
         assert transformed_parameters.size == np.size(self.constraints)
         parameters = np.zeros(transformed_parameters.size)
-        zipist     = zip(transformed_parameters,self.constraints)
+        ziplist    = zip(transformed_parameters,self.constraints)
         for i,(t_param,constraint) in enumerate(ziplist):
             if constraint is None or constraint == 'fixed' or constraint == '':
                 parameters[i] = t_param
