@@ -69,7 +69,7 @@ class GPyKernel (BaseKernel):
         params += [child.parameters for _,child in self._children]
 
         # now concatenate into an array
-        if len(parameters) > 0:
+        if len(params) > 0:
             params = np.concatenate(params, axis=0)
         else:
             params = np.array([])
