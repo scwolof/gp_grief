@@ -59,7 +59,7 @@ class BaseModel (object):
             return self._log_like
 
 
-    def optimize(self, max_iters=1e3, messages=True, use_counter=False,\
+    def optimize(self, max_iters=1e3, messages=False, use_counter=False,\
                 factr=1e7, pgtol=1e-05):
         """
         maximize the log likelihood
