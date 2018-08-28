@@ -378,7 +378,6 @@ class BaseModel (object):
 
     def _adjoint_gradient(self,parameters):
         raise NotImplementedError('')
-        return log_like, gradient
 
 
     def __str__(self):

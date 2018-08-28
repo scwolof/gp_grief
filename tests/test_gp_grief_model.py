@@ -5,7 +5,7 @@ from numpy.testing import assert_almost_equal, assert_array_almost_equal
 from scipy.stats import multivariate_normal as mvn
 
 from gp_grief.grid import InducingGrid
-from gp_grief.kern import GPyKernel, GriefKernel
+from gp_grief.kern import RBF, GriefKernel
 from gp_grief.models import GPGriefModel
 
 
@@ -19,7 +19,7 @@ class TestGPGriefModel:
         y = np.random.rand(n,1)
 
         grid = InducingGrid(x)
-        kern = GPyKernel(1,lengthscale=0.5, kernel='RBF')
+        kern = RBF(1, lengthscale=0.5)
         kern = GriefKernel(kern_list=[kern,]*d, grid=grid, n_eigs=50)
         m    = GPGriefModel(x,y,kern,noise_var=0.1)
         lml  = m._compute_log_likelihood( m.parameters )

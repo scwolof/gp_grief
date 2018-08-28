@@ -13,10 +13,6 @@ logger = getLogger(__name__)
 
 
 class GPGriefModel (BaseModel):
-    """ 
-    GP-GRIEF (GP with GRId-structured Eigen Functions) 
-    """
-
     def __init__(self, X, Y, kern, noise_var=1.):
         """
         GP-GRIEF (GP with GRId-structured Eigen Functions)
@@ -55,24 +51,12 @@ class GPGriefModel (BaseModel):
              [
                  '_P', '_Pchol',
                  '_alpha_p', # precomputed W * Phi.T * alpha
+                 '_A', '_Phi', # change when base kernel hyperparams change
+                 '_X_last_pred', '_Phi_last_pred', # saved from last
              ])))
-        if self.kern.opt_kernel_params:
-            self.dependent_attributes = np.unique(np.concatenate(
-                (self.dependent_attributes,
-                 [
-                     '_A', '_Phi', # change when base kernel hyperparams change
-                     '_X_last_pred', '_Phi_last_pred', # saved from last
-                 ])))
-        else:
-            self._A = None
-            self._Phi_last_pred = None
 
         # set some other default stuff
-        if self.kern.opt_kernel_params:
-            self.grad_method = 'finite_difference'
-        else:
-            self.grad_method = ['adjoint', 'finite_difference'][0]
-        return
+        self.grad_method = 'finite_difference'
 
 
     def fit(self, **kwargs):
@@ -140,53 +124,6 @@ class GPGriefModel (BaseModel):
         # compute the P matrix and factorize
         self._P = self._A + np.diag(self.noise_var/self._w)
         self._Pchol = cho_factor(self._P)
-
-
-    def _adjoint_gradient(self,parameters):
-        """ 
-        compute the log likelihood and the gradient wrt the hyperparameters 
-        using the adjoint method 
-        """
-        assert isinstance(parameters,np.ndarray)
-
-        # get the free indicies
-        free_inds = np.nonzero(np.logical_not(self._fixed_indicies))[0]
-        gradient = np.zeros(parameters.shape) + np.nan # initialize this
-
-        # Compute log like at current point. Internal state will be set here
-        log_like = self._compute_log_likelihood(parameters)
-
-        # get gradients wrt eigenfunction weights
-        if self.kern.reweight_eig_funs:
-            # compute the data fit gradient
-            data_fit_grad = 0.5*np.power(self._Phi.T.dot(self._alpha),2).squeeze()
-            # compute the complexity term gradient
-            Pinv_A = cho_solve(self._Pchol, self._A)
-            complexity_grad = -0.5*(self._A.diagonal() -\
-                            (self._A * Pinv_A).sum(axis=0))/(self.noise_var)
-            # place the gradients in the vector (it goes last in the list)
-            gradient[-self.kern.n_eigs:] = data_fit_grad.squeeze()\
-                                           + complexity_grad.squeeze()
-        else:
-            Pinv_A = None # specify that this hasn't been computed.
-
-        # get the noise var gradient
-        if self.noise_var_constraint != 'fixed':
-            if Pinv_A is None:
-                Pinv_A = cho_solve(self._Pchol, self._A)
-            data_fit_grad = 0.5*(self._alpha.T.dot(self._alpha))
-            complexity_grad = -0.5*(float(self.num_data)\
-                                - np.trace(Pinv_A))/self.noise_var
-            gradient[0] = data_fit_grad.squeeze() + complexity_grad.squeeze()
-
-        # compute the gradient with respect to the kernel parameters
-        if self.kern.opt_kernel_params:
-            raise NotImplementedError("adjoint method not implemented for"\
-                            +"kernel parameter optimiszation, just weights")
-
-        # check to make sure not gradient was missed
-        assert not np.any(np.isnan(gradient[free_inds])), "gradient missed!"
-        return log_like, gradient
 
 
     def _compute_log_likelihood(self, parameters):

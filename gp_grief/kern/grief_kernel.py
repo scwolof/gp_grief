@@ -4,7 +4,7 @@ import numpy as np
 from ..grid import InducingGrid
 from gp_grief.tensors import KronMatrix, SelectionMatrixSparse,\
                             RowColKhatriRaoMatrix, expand_SKC
-from gp_grief.kern import GridKernel, GPyKernel
+from gp_grief.kern import GridKernel
 
 import logging
 logger = logging.getLogger(__name__)
@@ -14,20 +14,17 @@ class GriefKernel (GridKernel):
     """ 
     Kernel composed of grid-structured eigenfunctions 
     """
-    def __init__(self, kern_list, grid, n_eigs=1000, reweight_eig_funs=True, \
-                    opt_kernel_params=False, w=1., dim_noise_var=1e-12,\
-                    log_KRrowcol=True, **kwargs):
+    def __init__(self, kern_list, grid, n_eigs=1000, \
+                dim_noise_var=1e-12, log_KRrowcol=True, **kwargs):
         """
         Inputs:
             kern_list : list of 1d kernels
             grid : inducing point grid
             n_eigs : number of eigenvalues to use
             reweight_eig_funs : whether the eigenfunctions should be reweighted
-            opt_kernel_params : optimise kernel hyperparameters
             w : initial basis function weights (default is unity)
         """
-        self.reweight_eig_funs = bool(reweight_eig_funs)
-        self.opt_kernel_params = bool(opt_kernel_params)
+        #self.reweight_eig_funs = bool(reweight_eig_funs)
         super(GriefKernel, self).__init__(kern_list=kern_list, **kwargs)
         assert isinstance(grid,InducingGrid), "must be an InducingGrid"
         assert grid.input_dim==self.n_dims, "number of dimensions do not match"
@@ -35,30 +32,9 @@ class GriefKernel (GridKernel):
         self.dim_noise_var = float(dim_noise_var)
         self.n_eigs = int(min(n_eigs, self.grid.num_data))
 
-        # set the contraints for the base kernel hyperparameters
-        if not self.opt_kernel_params: # then fix everything
-            for i,kern in enumerate(self.kern_list):
-                if isinstance(kern, GPyKernel):
-                    self.kern_list[i].constraint_list = \
-                                np.tile('fixed', np.shape(kern.constraint_list))
-                else:
-                    for key in kern.constraint_map:
-                        self.kern_list[i].constraint_map[key] = \
-                            np.tile('fixed', np.shape(kern.constraint_map[key]))
-
         # set the constraints for the weights
-        if self.reweight_eig_funs:
-            self.w_constraints = np.array(['+ve',] * self.n_eigs, dtype='|S10')
-        else:
-            self.w_constraints = np.array(['fixed',] * self.n_eigs, dtype='|S10')
-
-
-        if w == 1.:
-            self.w = np.ones(self.n_eigs)
-        else:
-            assert w.shape == (self.n_eigs,)
-            assert np.all(w > 0.), "w's must be positive"
-            self.w = w
+        self.w_constraints = np.array(['fixed',] * self.n_eigs, dtype='|S10')
+        self.w = np.ones(self.n_eigs)
 
         # initialize some stuff
         self._old_base_kern_params = None
@@ -144,7 +120,10 @@ class GriefKernel (GridKernel):
 
     @property
     def diag_val(self):
-        """ return diagonal value of covariance matrix. Note that it's assumed the kernel is stationary """
+        """ 
+        Return diagonal value of covariance matrix. 
+        Note that it's assumed the kernel is stationary 
+        """
         raise NotImplementedError('')
 
 
@@ -171,25 +150,3 @@ class GriefKernel (GridKernel):
 
         # save the parameters
         self._old_base_kern_params = base_kern_params
-
-
-    def __str__(self):
-        """ prints the kernel """
-        s = '\nGriefKernel'
-        if self.radial_kernel:
-            s += " Radial (same kern along all dimensions)\n"
-            s += str(self.kern_list[0]) + '\n'
-        else:
-            for i,child in enumerate(self.kern_list):
-                s += '\nGrid Dimension %d' % i
-                s += str(child) + '\n'
-
-        # now print the weights
-        from tabulate import tabulate
-        s += "Eigenfunction Weights:\n"
-        s += str(tabulate([["weight %03d"%i, w, wm_lam, constraint]
-                           for i,(w, wm_lam, constraint) in enumerate(zip(self.w, np.exp(np.log(self.w) - self._log_lam + np.log(self.grid.num_data)), self.w_constraints))],
-                          headers=['Name', 'w Value', 'w*m/lam Value', 'Constraint'], tablefmt='orgtbl'))
-        # Note that we multiply w/lam times m because the inner products involved in the eigenfunctions sum up huge vectors of length m so the quotient would be washed out without this
-        s += '\n'
-        return s

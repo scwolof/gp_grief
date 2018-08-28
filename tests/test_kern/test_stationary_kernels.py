@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal
 
 import GPy.kern
-from gp_grief.kern import GPyKernel, RBF, Exponential, Matern32, Matern52
+from gp_grief.kern import RBF, Exponential, Matern32, Matern52
 
 
 class TestStationaryKernels:
@@ -35,16 +35,3 @@ class TestStationaryKernels:
             np.testing.assert_array_almost_equal(
                 Matern52(         d, **dd).cov(x),
                 GPy.kern.Matern52(d, **dd).K(x))
-            
-            # GPy - RBF
-            np.testing.assert_array_almost_equal(
-                GPyKernel(   d, **dd, kernel="RBF").cov(x),
-                GPy.kern.RBF(d, **dd).K(x))
-            
-            if d == 1: # these are only for 1d
-                # GPy - PeriodicMatern32
-                s = "PeriodicMatern32"
-                np.testing.assert_array_almost_equal(
-                    GPyKernel(                d, **dd, kernel=s).cov(x),
-                    GPy.kern.PeriodicMatern32(d, **dd).K(x))
-

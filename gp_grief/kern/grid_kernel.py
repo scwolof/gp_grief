@@ -229,17 +229,3 @@ class GridKernel (object):
         Note that it's assumed the kernel is stationary 
         """
         return self.cov(np.zeros((1,self.n_dims))).squeeze()
-
-
-    def __str__(self):
-        """ prints the kernel """
-        s = '\nGridKernel'
-        if self.radial_kernel:
-            s += " Radial (same kern along all dimensions)\n"
-            s += str(self.kern_list[0]) + '\n'
-        else:
-            for i,child in enumerate(self.kern_list):
-                s += '\nGrid Dimension %d' % i
-                s += str(child) + '\n'
-        return s
-

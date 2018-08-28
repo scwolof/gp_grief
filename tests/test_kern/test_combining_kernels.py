@@ -4,9 +4,7 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal
 
 import GPy.kern
-from gp_grief.kern import GPyKernel, RBF
-from gp_grief.models import GPRegressionModel
-
+from gp_grief.kern import RBF
 
 def rastrigin (x, lin_term=None):
     """
@@ -60,34 +58,3 @@ class TestStationaryKernels:
 
             # check to ensure they give the same kernel covariance matrix
             np.testing.assert_array_almost_equal( k_kml.cov(x), k_gpy.K(x) )
-            
-            # test training
-            m = GPRegressionModel(x, y, k_kml)
-            m.optimize( max_iters=5 )
-            m.checkgrad()
-
-    def test_wrapped_gpy_kernels (self):
-        # generate data
-        np.random.seed(0)
-        d = 5
-        N = 100
-        x = np.random.uniform(size=(N,d)) # generate dataset
-        y = rastrigin((x*2-1)*5.12)
-
-        def ddf (i):
-            t = 0.5*i+0.5
-            return {'lengthscale':t, 'variance':t, 'name':'k%d' % i}
-
-        # get base kernels
-        kb_gpy = [ GPy.kern.RBF(d, **ddf(i)) for i in range(4) ]
-        k_gpy  = ((kb_gpy[0] * kb_gpy[1]) + kb_gpy[2]) * kb_gpy[3]
-        # Wrap the GPy kernel
-        k_kml = GPyKernel(d, kernel=k_gpy)
-
-        # check to ensure they give the same kernel covariance matrix
-        np.testing.assert_array_almost_equal( k_kml.cov(x), k_gpy.K(x) )
-
-        # test training
-        m = GPRegressionModel(x, y, k_kml)
-        m.optimize(max_iters=5)
-        m.checkgrad()
