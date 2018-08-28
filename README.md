@@ -2,7 +2,7 @@
 Large Scale Gaussian Processes using Grid-Structured Eigenfunction (GRIEF) kernels.
 
 # Notes on forked repository.
-Made to work with python 3.4+ and latest version of GPy.<\br>
+Made to work with python 3.4+ and latest version of GPy.  
 Structure is changed to fit that of a GPdoemd model.
 
 # Citation
