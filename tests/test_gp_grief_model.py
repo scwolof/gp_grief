@@ -14,7 +14,7 @@ class TestGPGriefModel:
     def test_gp_grief_model (self):
         np.random.seed(0)
         d = 5
-        n = 100
+        n = 57
         x = np.random.rand(n,d)
         y = np.random.rand(n,1)
 
@@ -38,3 +38,7 @@ class TestGPGriefModel:
         # check the LML accuacy
         lml_exact = mvn.logpdf(x=y.squeeze(), mean=np.zeros(n), cov=K)
         assert_almost_equal(lml, lml_exact, decimal=6)
+
+        m.optimize()
+        xnew  = np.random.rand(13, d)
+        mu,s2 = m.predict(xnew)
