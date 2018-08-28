@@ -4,16 +4,18 @@ import numpy as np
 from ..grid import InducingGrid
 from gp_grief.tensors import KronMatrix, SelectionMatrixSparse,\
                             RowColKhatriRaoMatrix, expand_SKC
-from gp_grief.kern import GridKernel
+from gp_grief.kern import GridKernel, GPyKernel
 
 import logging
 logger = logging.getLogger(__name__)
 
 
 class GriefKernel (GridKernel):
-    """ kernel composed of grid-structured eigenfunctions """
+    """ 
+    Kernel composed of grid-structured eigenfunctions 
+    """
     def __init__(self, kern_list, grid, n_eigs=1000, reweight_eig_funs=True, \
-                    pt_kernel_params=False, w=1., dim_noise_var=1e-12,\
+                    opt_kernel_params=False, w=1., dim_noise_var=1e-12,\
                     log_KRrowcol=True, **kwargs):
         """
         Inputs:
