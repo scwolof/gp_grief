@@ -1,12 +1,13 @@
 
 import numpy as np
-import GPy.kern
 
 
-class BaseKernel(object):
-    """ base class for all kernel functions """
+class BaseKernel (object):
+    """ 
+    Base class for all kernel functions 
+    """
 
-    def __init__(self, n_dims, active_dims, name):
+    def __init__ (self, n_dims, active_dims, name):
         self.n_dims = n_dims
         if active_dims is None: # then all dims are active
             active_dims = np.arange(self.n_dims)
@@ -26,7 +27,7 @@ class BaseKernel(object):
         self._children = [] # contains the children kernels (form __mul__ and __add__)
 
 
-    def cov(self,x,z=None):
+    def cov (self,x,z=None):
         """
         Evaluate covariance kernel at points to form a covariance matrix
 
@@ -41,7 +42,7 @@ class BaseKernel(object):
         raise NotImplementedError('Not implemented')
 
     @property
-    def parameters(self):
+    def parameters (self):
         """
         returns the kernel parameters as a 1d array
         """
@@ -63,7 +64,7 @@ class BaseKernel(object):
         return parameters
 
     @parameters.setter
-    def parameters(self, value):
+    def parameters (self, value):
         """
         setter for parameters property
         """
@@ -74,17 +75,17 @@ class BaseKernel(object):
         # set the parent's parameters
         for name in self.parameter_list:
             old = getattr(self, name) # old value
-            setattr(self, name, value[i0:i0+np.size(old)].reshape(np.shape(old))) # ensure same shape as old
+            setattr(self, name, value[i0:i0+np.size(old)].reshape(np.shape(old)))
             i0 += np.size(old) # increment counter
 
         # set the children's parameters
         for _,child in self._children:
             old = getattr(child, 'parameters') # old value
-            setattr(child, 'parameters', value[i0:i0+np.size(old)].reshape(np.shape(old))) # ensure same shape as old
+            setattr(child, 'parameters', value[i0:i0+np.size(old)].reshape(np.shape(old)))
             i0 += np.size(old) # increment counter
 
     @property
-    def constraints(self):
+    def constraints (self):
         """ returns the constraints for all parameters """
         # check if implemented
         if self.constraint_map is None:
@@ -104,15 +105,14 @@ class BaseKernel(object):
         return constraints
 
 
-    def is_stationary(self):
-        """ check if stationary """
-        if isinstance(self, GPyKernel):
-            return isinstance(self.kern, GPy.kern.src.stationary.Stationary)
-        else:
-            return isinstance(self, Stationary)
+    def is_stationary (self):
+        """ 
+        check if stationary 
+        """
+        return isinstance(self, Stationary)
 
 
-    def _process_cov_inputs(self,x,z):
+    def _process_cov_inputs (self, x, z):
         """
         function for processing inputs to the cov function
 
@@ -129,11 +129,12 @@ class BaseKernel(object):
             z = x
         else:
             assert z.ndim == 2
-            assert z.shape[1] == self.n_dims, "should be %d dims, not %d" % (self.n_dims,z.shape[1])
+            assert z.shape[1] == self.n_dims,\
+                        "should be %d dims, not %d" % (self.n_dims,z.shape[1])
         return x,z
 
 
-    def _apply_children(self, K, x, z=None):
+    def _apply_children (self, K, x, z=None):
         """
         apply the children to the parents covariance matrix
         This MUST be called right at the end of the cov routine
@@ -151,7 +152,7 @@ class BaseKernel(object):
                 raise ValueError('Unknown kernel operation %s' % repr(operation))
         return K
 
-    def __mul__(k1,k2):
+    def __mul__ (k1, k2):
         """
         multiply kernel k1 with kernel k2
         returns k = k1 * k2
@@ -174,27 +175,30 @@ class BaseKernel(object):
         return parent
 
 
-    def __add__(k1,k2):
+    def __add__ (k1, k2):
         """
         adds kernel k1 with kernel k2
         returns k = k1 + k2
         note that explicit copies are formed in the process
         """
-        assert isinstance(k2, BaseKernel), 'k2 must be a kernel'  # ensure it is a kernel
+        assert isinstance(k2, BaseKernel), 'k2 must be a kernel'
         # copy the kernels
         parent = k1.copy()
         child  = k2.copy()
 
         # add the child to the parent
-        parent._children.append( ('add', child) ) # add the kernel the children
+        parent._children.append( ('add', child) )
         return parent
 
 
-    def copy(self):
-        """ return a deepcopy """
+    def copy (self):
+        """ 
+        return a deepcopy 
+        """
         from copy import deepcopy
         # first create a deepcopy
         self_copy = deepcopy(self)
         # then create a copy of all children 
-        self_copy._children = [(deepcopy(operation),child.copy()) for operation,child in self_copy._children]
+        self_copy._children = [(deepcopy(operation),child.copy()) \
+                                    for operation,child in self_copy._children]
         return self_copy

@@ -123,7 +123,8 @@ class GriefKernel (GridKernel):
         """ setup the covariance matrix on the inducing grid, factorize and find largest eigvals/vecs """
         # determine if anything needs to be recomputed
         base_kern_params = super(GriefKernel, self).parameters
-        if self._old_base_kern_params is not None and np.array_equal(self._old_base_kern_params, base_kern_params):
+        if self._old_base_kern_params is not None and \
+            np.array_equal(self._old_base_kern_params, base_kern_params):
             return # then no need to recompute
 
         # get the covariance matrix on the grid
@@ -135,7 +136,8 @@ class GriefKernel (GridKernel):
 
         # get the biggest eigenvalues and eigenvectors
         n_eigs = int(min(self.n_eigs, all_eig_vals.shape[0])) # can't use more eigenvalues then all of them
-        eig_pos, self._log_lam = all_eig_vals.find_extremum_eigs(n_eigs=n_eigs,mode='largest',log_expand=True)[:2]
+        eig_pos, self._log_lam = \
+            all_eig_vals.find_extremum_eigs(n_eigs=n_eigs,mode='largest',log_expand=True)[:2]
 
         # create a Khatri-Rao selection matrix, Sp 
         self._Sp = [SelectionMatrixSparse((col, Kuu.K[i].shape[0])) for i,col in enumerate(eig_pos.T)]
