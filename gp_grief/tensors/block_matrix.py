@@ -1,9 +1,10 @@
 
 import numpy as np
 
-
 class BlockMatrix (object):
-	""" create Block matrix """
+	""" 
+	Create Block matrix 
+	"""
 
 	def __init__(self, A):
 		"""
