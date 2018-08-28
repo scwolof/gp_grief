@@ -11,12 +11,6 @@ class RandomVariable(object):
         """ by default, the method in rv should be called """
         return getattr(self.rv, name, *args, **kwargs)
 
-    def __str__(self):
-        s = '%s rv. ' % self.__class__.__name__
-        s += 'mean=%.2f, var=%.2f, skew=%.2f, kurt=%.2f' \
-                % self.rv.stats(moments='mvsk')
-        return s
-
     def logpdf_grad(self, x):
         raise NotImplementedError('')
 

@@ -193,19 +193,14 @@ class BaseModel (object):
         free = np.logical_not(self._fixed_indicies)
         transformed_parameters = self._previous_parameters
         transformed_parameters[free] = transformed_free_parameters
-        try:
-            # untransform and internalize parameters
-            self.parameters = self._untransform_parameters(transformed_parameters)
-            # compute objective and gradient in untransformed space
-            (objective, gradient) = self.log_likelihood(return_gradient=True)
-            objective = -objective # since we want to minimize
-            gradient =  -gradient
-            # transform the gradient 
-            gradient = self._transform_gradient(self.parameters, gradient)
-        except (LinAlgError, ZeroDivisionError, ValueError):
-            print('numerical issue computing log-likelihood or gradient')
-            print('Model where failure occured:\n' + self.__str__())
-            raise
+        # untransform and internalize parameters
+        self.parameters = self._untransform_parameters(transformed_parameters)
+        # compute objective and gradient in untransformed space
+        (objective, gradient) = self.log_likelihood(return_gradient=True)
+        objective = -objective # since we want to minimize
+        gradient =  -gradient
+        # transform the gradient 
+        gradient = self._transform_gradient(self.parameters, gradient)
         # get rid of the gradients of the fixed parameters
         free_gradient = gradient[free]
 
@@ -339,16 +334,3 @@ class BaseModel (object):
 
     def _adjoint_gradient(self,parameters):
         raise NotImplementedError('')
-
-
-    def __str__(self):
-        from tabulate import tabulate
-        s = '\n%s Model\n' % self.__class__.__name__
-
-        # print the  noise_var stuff
-        s += str(tabulate([['noise_var',self.noise_var,self.noise_var_constraint]],
-                headers=['Name', 'Value', 'Constraint'], tablefmt='orgtbl'))+'\n'
-
-        # print the kernel stuff
-        s += str(self.kern)
-        return s
