@@ -5,9 +5,6 @@ import scipy.linalg as la
 import scipy.linalg.blas as blas
 from numpy.linalg.linalg import LinAlgError
 
-from logging import getLogger
-logger = getLogger(__name__)
-from warnings import warn
 
 class KronMatrix (object):
 	"""
@@ -186,17 +183,10 @@ class KronMatrix (object):
 		Q = np.empty(self.n, dtype=object)
 		eig_vals = np.empty(self.n, dtype=object)
 		for i,Ki in enumerate(self.K):
-			try:
-				if hasattr(Ki, "svd"):
-					(Q[i], eig_vals[i]) = Ki.svd()
-				else:
-					(Q[i], eig_vals[i]) = np.linalg.svd(Ki, full_matrices=0, 
-															compute_uv=1)[:2]
-			except LinAlgError:
-				logger.error('SVD failed on dimension %d.' % (i))
-				if isinstance(Ki, np.ndarray):
-					logger.error('rcond=%g.' % (np.linalg.cond(Ki)))
-				raise
+			if hasattr(Ki, "svd"):
+				(Q[i],eig_vals[i]) = Ki.svd()
+			else:
+				(Q[i],eig_vals[i]) = np.linalg.svd(Ki,full_matrices=0,compute_uv=1)[:2]
 		return KronMatrix(Q), KronMatrix(eig_vals)
 
 
@@ -229,8 +219,6 @@ class KronMatrix (object):
 					Kb = log_kron(a=Kb, b=Ki, a_logged=True)
 		else:
 			Kb = 1.
-			if self.ndim == 1 and self.n > 10:
-				warn('consider using numerically more stable log_expansion')
 			for Ki in self.K:
 				if hasattr(Ki, "expand"):
 					Kb = np.kron(Kb, Ki.expand())
@@ -389,8 +377,6 @@ class KronMatrix (object):
 		assert n_eigs >= 1, "must use at least 1 eigenvalue"
 		assert n_eigs <= eigs.shape[0], "n_eigs > number of eigenvalues"
 		assert mode == 'largest' or mode == 'smallest'
-		if not log_expand and eigs.n > 10:
-			warn('should use log option which will be more numerically stable')
 
 		# Return n_eigs extremum values and indices of those values
 		def get_extremum(vec):

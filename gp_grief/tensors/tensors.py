@@ -1,7 +1,7 @@
 
 import numpy as np
-
 from gp_grief.tensors import SelectionMatrixSparse
+
 
 class TensorProduct(object):
 	""" 
