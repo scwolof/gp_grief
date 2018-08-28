@@ -50,7 +50,7 @@ class GPGriefModel (BaseModel):
              ])))
 
         # set some other default stuff
-        self.grad_method = 'finite_difference'
+        #self.grad_method = 'finite_difference'
 
 
     def fit(self, **kwargs):

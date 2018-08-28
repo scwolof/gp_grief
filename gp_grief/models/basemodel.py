@@ -21,7 +21,7 @@ class BaseModel (object):
                                      '_gradient','_K',
                                      '_log_det']
         self._previous_parameters = None # previous parameters from last call
-        self.grad_method = None # could be {'finite_difference','adjoint'}
+        #self.grad_method = None # could be {'finite_difference','adjoint'}
         self.noise_var_constraint = '+ve' # Gaussian noise variance constraint
         return
 
@@ -37,12 +37,12 @@ class BaseModel (object):
         # check if I need to recompute anything
         if return_gradient and (self._gradient is None):
             # compute the log likelihood and gradient wrt the parameters
-            if 'adjoint' in self.grad_method:
-                (self._log_like, self._gradient) = self._adjoint_gradient(p)
-            elif 'finite_difference' in self.grad_method:
-                (self._log_like, self._gradient) = self._finite_diff_gradient(p)
-            else:
-                raise RuntimeError('unknown grad_method %s' % repr(self.grad_method))
+            #if 'adjoint' in self.grad_method:
+            #    (self._log_like, self._gradient) = self._adjoint_gradient(p)
+            #elif 'finite_difference' in self.grad_method:
+            (self._log_like, self._gradient) = self._finite_diff_gradient(p)
+            #else:
+            #    raise RuntimeError('unknown grad_method %s' % repr(self.grad_method))
         elif self._log_like is None: # compute the log-likelihood without gradient
             self._log_like = self._compute_log_likelihood(p)
         else: # everything is already computed
