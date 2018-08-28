@@ -3,9 +3,6 @@ import numpy as np
 from itertools import product
 from gp_grief.tensors import KronMatrix, KhatriRaoMatrix
 
-import logging
-logger = logging.getLogger(__name__)
-
 
 class GridKernel (object):
     """ 
@@ -41,8 +38,6 @@ class GridKernel (object):
                 if hasattr(self.kern_list[i], 'fix_variance'):
                     self.kern_list[i].fix_variance()
                 elif np.size(self.kern_list[i].constraint_map['variance']) > 1:
-                    _logger.info("Multiple variance parameters found in the"\
-                                        +"kernel, will only fix the first")
                     self.kern_list[i].constraint_map['variance'][0] = 'fixed'
                 else:
                     self.kern_list[i].constraint_map['variance'] = 'fixed'

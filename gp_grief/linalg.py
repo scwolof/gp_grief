@@ -1,9 +1,6 @@
+
 from scipy.linalg import solve_triangular
 import numpy as np
-import logging
-import warnings
-logger = logging.getLogger(__name__)
-from pdb import set_trace
 import sys
 
 
@@ -65,7 +62,6 @@ class solver_counter:
     def __call__(self, rk=None, msg='', store=None):
         self.niter += 1
         if self._disp:
-            logger.info('iter %3i. %s' % (self.niter,msg))
             sys.stdout.flush()
         if store is not None: # then backup the value
             self.backup = store

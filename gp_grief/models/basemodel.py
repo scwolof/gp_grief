@@ -7,10 +7,6 @@ from numpy.linalg.linalg import LinAlgError
 from numpy.testing import assert_array_almost_equal
 from scipy.optimize import fmin_l_bfgs_b
 
-# development stuff
-from logging import getLogger
-from warnings import warn
-logger = getLogger(__name__)
 
 class BaseModel (object):
     # for pos. or neg. constrained problems, as close as it can get to zero
@@ -20,7 +16,6 @@ class BaseModel (object):
 
     def __init__(self):
         """ initialize a few instance variables """
-        logger.debug('Initializing %s model.' % self.__class__.__name__)
         self.dependent_attributes = ['_alpha',
                                      '_log_like',
                                      '_gradient','_K',
@@ -71,17 +66,9 @@ class BaseModel (object):
                 use factr of 1e12 for low accuracy, 10 for extremely high accuracy 
                 (default 1e7)
         """
-        logger.debug('Beginning MLE to optimize hyperparams. grad_method=%s'\
-                    % self.grad_method)
-
         # setup the optimization
-        try:
-            x0 = self._transform_parameters(self.parameters)
-            assert np.all(np.isfinite(x0))
-        except:
-            logger.error('Transformation failed for initial values. '\
-                + 'Ensure constraints are met or the value is not too small.')
-            raise
+        x0 = self._transform_parameters(self.parameters)
+        assert np.all(np.isfinite(x0))
 
         # filter out the fixed parameters
         free = np.logical_not(self._fixed_indicies)
@@ -98,13 +85,9 @@ class BaseModel (object):
             x_opt, f_opt, opt = fmin_l_bfgs_b(func=self._objective_grad, x0=x0,\
                 factr=factr, pgtol=pgtol, maxiter=max_iters, disp=messages)
         except (KeyboardInterrupt,IndexError):
-            logger.info('Keyboard interrupt raised. Cleaning up...')
             if self._counter is not None and self._counter.backup is not None:
                 self.parameters = self._counter.backup[1]
-                logger.info('will return best parameter set with'\
-                    + 'log-likelihood = %.4g' % self._counter.backup[0])
         else:
-            logger.info('Function Evals: %d. Exit status: %s' % (f_opt, opt['warnflag']))
             # extract the optimal value and set the parameters to this
             transformed_parameters = self._previous_parameters 
             transformed_parameters[free] = x_opt
@@ -135,16 +118,11 @@ class BaseModel (object):
             assert_array_almost_equal(grad_exact / grad_analytic,\
                                       np.ones(grad_exact.shape),decimal=decimal)
         except:
-            logger.info('Gradient check failed.')
-            logger.debug('[[Finite-Diff Gradient], [Analytic Gradient]]:\n%s\n'\
-                % repr(np.asarray([grad_exact,grad_analytic])))
             if raise_if_fails:
                 raise
             else:
-                logger.info(format_exc()) # print the output
                 return False
         else:
-            logger.info('Gradient check passed.')
             return True
 
     @property
@@ -222,16 +200,11 @@ class BaseModel (object):
             (objective, gradient) = self.log_likelihood(return_gradient=True)
             objective = -objective # since we want to minimize
             gradient =  -gradient
-            # ensure the values are finite
-            if not np.isfinite(objective):
-                logger.debug('objective is not finite')
-            if not np.all(np.isfinite(gradient[free])):
-                logger.debug('some derivatives are non-finite')
             # transform the gradient 
             gradient = self._transform_gradient(self.parameters, gradient)
         except (LinAlgError, ZeroDivisionError, ValueError):
-            logger.error('numerical issue computing log-likelihood or gradient')
-            logger.debug('Model where failure occured:\n' + self.__str__())
+            print('numerical issue computing log-likelihood or gradient')
+            print('Model where failure occured:\n' + self.__str__())
             raise
         # get rid of the gradients of the fixed parameters
         free_gradient = gradient[free]
@@ -276,10 +249,6 @@ class BaseModel (object):
                 transformed_parameters[i] =\
                     self._transformations[constraint].transform(\
                                           param - self.param_shift[constraint])
-
-        # check to ensure transformation led to finite value
-        if not np.all(np.isfinite(transformed_parameters)):
-            logger.debug('transformation led to non-finite value')
         return transformed_parameters
 
 
@@ -298,10 +267,6 @@ class BaseModel (object):
                 transformed_grads[i] =\
                     self._transformations[constraint].transform_grad(\
                                     param - self.param_shift[constraint],grad)
-
-        # check to ensure transformation led to finite value
-        if not np.all(np.isfinite(transformed_grads)):
-            logger.debug('transformation led to non-finite value')
         return transformed_grads
 
 
@@ -319,10 +284,6 @@ class BaseModel (object):
                 parameters[i] = \
                     self._transformations[constraint].inverse_transform(t_param)\
                     + self.param_shift[constraint]
-
-        # check to ensure transformation led to finite value
-        if not np.all(np.isfinite(parameters)):
-            logger.debug('transformation led to non-finite value')
         return parameters
 
 

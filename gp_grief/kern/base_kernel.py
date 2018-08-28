@@ -2,9 +2,6 @@
 import numpy as np
 import GPy.kern
 
-import logging
-logger = logging.getLogger(__name__)
-
 
 class BaseKernel(object):
     """ base class for all kernel functions """

@@ -1,9 +1,6 @@
 
 import numpy as np
 
-import logging
-logger = logging.getLogger(__name__)
-
 
 def nd_grid(*xg):
     """
@@ -80,7 +77,6 @@ class InducingGrid(object):
                 the demension is 1d. No other inputs are nessessary and if 
                 specified then they'll be ignored
         """
-        logger.debug('Initializing inducing grid.')
         k = mbar; del mbar # mbar is an alias
         k_min = mbar_min; del mbar_min # mbar_min is an alias
         if xg is None: # then generate a grid from the scattered points x
@@ -101,8 +97,6 @@ class InducingGrid(object):
                                                   np.ptp(x,axis=0))).T
             n_unq                    = np.array([np.unique(x[:,i]).size for \
                                                  i in range(self.grid_dim)])
-            if not np.all(n_unq >= 2):
-                logger.debug('some dimension have < 2 unique points')
             for i,ki in enumerate(k):
                 if ki <= 1:
                     self.grid_shape[i] = np.int32(np.maximum(\

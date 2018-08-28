@@ -2,14 +2,8 @@
 from ..kern import BaseKernel, GriefKernel
 from gp_grief.models import BaseModel
 
-# numpy/scipy stuff 
 import numpy as np
 from scipy.linalg import cho_factor,cho_solve
-
-# development stuff
-from logging import getLogger
-from warnings import warn
-logger = getLogger(__name__)
 
 
 class GPGriefModel (BaseModel):
@@ -82,7 +76,6 @@ class GPGriefModel (BaseModel):
             Yhat : (M,1) numpy array predictions at Xnew
             Yhatvar : only returned if compute_var is not None. See compute_var
         """
-        logger.debug('Predicting model at new points.')
         assert Xnew.ndim == 2
         assert Xnew.shape[1] == self.input_dim
         self.parameters # ensure that the internal state is consistent!
@@ -93,7 +86,6 @@ class GPGriefModel (BaseModel):
 
         # get cross covariance between training and testing points
         if self._Phi_last_pred is None or not np.array_equal(Xnew,self._X_last_pred):
-            logger.debug("computing Phi at new prediction points")
             self._Phi_last_pred = self.kern.cov(x=Xnew)[0]
             self._X_last_pred = Xnew
 

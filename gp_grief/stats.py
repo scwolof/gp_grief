@@ -1,13 +1,7 @@
+
 import numpy as np
 from scipy.stats import lognorm as scipy_lognorm, norm as scipy_norm
 
-# development stuff
-from numpy.linalg.linalg import LinAlgError
-from traceback import format_exc
-from pdb import set_trace
-from logging import getLogger
-from warnings import warn
-logger = getLogger(__name__)
 
 class RandomVariable(object):
     """ 

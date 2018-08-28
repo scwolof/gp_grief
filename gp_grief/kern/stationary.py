@@ -2,9 +2,6 @@
 import numpy as np
 from gp_grief.kern import BaseKernel
 
-import logging
-logger = logging.getLogger(__name__)
-
 
 class Stationary (BaseKernel):
     """ base class for stationary kernels """
@@ -92,7 +89,6 @@ class RBF (Stationary):
         """
         super(RBF, self).__init__(\
                     n_dims=n_dims, active_dims=active_dims, name=name)
-        logger.debug('Initializing %s kernel.' % self.name)
 
         # deal with the parameters
         assert np.size(variance) == 1
@@ -119,8 +115,6 @@ class RBF (Stationary):
         """
         if self.lengthscale < 1e-6: # then make resiliant to division by zero
             K = self.variance * (self.distances_squared(x=x,z=z)==0)
-            logger.debug('protected RBF against zero-division since lengthscale'\
-                            + 'too small (%s).' % repr(self.lengthscale))
         else: # then compute the nominal way
             if lengthscale is None:
                 K = self.variance*np.exp( -0.5*self.distances_squared(x=x,z=z)\
@@ -147,7 +141,6 @@ class Exponential (Stationary):
         """
         super(Exponential, self).__init__(\
                     n_dims=n_dims, active_dims=active_dims, name=name)
-        logger.debug('Initializing %s kernel.' % self.name)
 
         # deal with the parameters
         self.variance = np.float64(variance)
@@ -188,7 +181,6 @@ class Matern32 (Stationary):
         """
         super(Matern32, self).__init__(\
                     n_dims=n_dims, active_dims=active_dims, name=name)
-        logger.debug('Initializing %s kernel.' % self.name)
 
         # deal with the parameters
         self.variance = np.float64(variance)
@@ -229,7 +221,6 @@ class Matern52 (Stationary):
         """
         super(Matern52, self).__init__(\
                     n_dims=n_dims, active_dims=active_dims, name=name)
-        logger.debug('Initializing %s kernel.' % self.name)
 
         # deal with the parameters
         self.variance = np.float64(variance)

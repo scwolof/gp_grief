@@ -6,16 +6,12 @@ from gp_grief.tensors import KronMatrix, SelectionMatrixSparse,\
                             RowColKhatriRaoMatrix, expand_SKC
 from gp_grief.kern import GridKernel
 
-import logging
-logger = logging.getLogger(__name__)
-
 
 class GriefKernel (GridKernel):
     """ 
     Kernel composed of grid-structured eigenfunctions 
     """
-    def __init__(self, kern_list, grid, n_eigs=1000, \
-                dim_noise_var=1e-12, log_KRrowcol=True, **kwargs):
+    def __init__(self, kern_list, grid, n_eigs=1000, dim_noise_var=1e-12, **kwargs):
         """
         Inputs:
             kern_list : list of 1d kernels
@@ -26,7 +22,7 @@ class GriefKernel (GridKernel):
         """
         #self.reweight_eig_funs = bool(reweight_eig_funs)
         super(GriefKernel, self).__init__(kern_list=kern_list, **kwargs)
-        assert isinstance(grid,InducingGrid), "must be an InducingGrid"
+        assert isinstance(grid, InducingGrid), "must be an InducingGrid"
         assert grid.input_dim==self.n_dims, "number of dimensions do not match"
         self.grid = grid
         self.dim_noise_var = float(dim_noise_var)
@@ -38,7 +34,6 @@ class GriefKernel (GridKernel):
 
         # initialize some stuff
         self._old_base_kern_params = None
-        self.log_KRrowcol = log_KRrowcol
 
 
     def cov(self, x, z=None):
@@ -74,11 +69,8 @@ class GriefKernel (GridKernel):
             Kux = [k.T for k in Kxu]
 
             # form the RowColKhatriRaoMatrix 
-            if self.log_KRrowcol: # form and rescale in a numerically stable manner
-                log_matrix, sign = expand_SKC(S=self._Sp, K=self._Quu.T.K, C=Kux, logged=True)
-                Phi_L = sign.T * np.exp(log_matrix.T - 0.5*self._log_lam.reshape((1,-1)))
-            else:
-                Phi_L = expand_SKC(S=self._Sp, K=self._Quu.T.K, C=Kux, logged=False).T / np.sqrt(np.exp(self._log_lam.reshape((1,-1))))
+            log_matrix, sign = expand_SKC(S=self._Sp, K=self._Quu.T.K, C=Kux, logged=True)
+            Phi_L = sign.T * np.exp(log_matrix.T - 0.5*self._log_lam.reshape((1,-1)))
 
             # compute the left coefficient matrix (which is identical)
             Phi_R = Phi_L
