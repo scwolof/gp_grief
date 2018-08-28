@@ -23,15 +23,15 @@ class TestGPGriefModel:
         kern = GriefKernel(kern_list=[kern,]*d, grid=grid, n_eigs=50)
         m    = GPGriefModel(x,y,kern,noise_var=0.1)
         lml  = m._compute_log_likelihood( m.parameters )
-        K    = m._mv_cov( np.identity(n) )
+        K    = m._mv_K( np.identity(n) )
 
         # check the linear system solve accuracy
-        alp = m._mv_cov_inv(y)
+        alp = m._mv_K_inv(y)
         alp_exact = np.linalg.solve(K, y)
         assert_array_almost_equal(alp, alp_exact, decimal=6)
 
         # check the log determinant
-        log_det = m._cov_log_det()
+        log_det = m._K_log_det()
         log_det_exact = np.linalg.slogdet(K)[1]
         assert_almost_equal(log_det, log_det_exact, decimal=6)
 

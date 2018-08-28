@@ -57,4 +57,4 @@ class TestStationaryKernels:
             k_kml = ((kb_kml[0] * kb_kml[1]) + kb_kml[2]) * kb_kml[3]
 
             # check to ensure they give the same kernel covariance matrix
-            np.testing.assert_array_almost_equal( k_kml.cov(x), k_gpy.K(x) )
+            np.testing.assert_array_almost_equal( k_kml.K(x), k_gpy.K(x) )

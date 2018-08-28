@@ -11,7 +11,7 @@ class GriefKernel (GridKernel):
     """ 
     Kernel composed of grid-structured eigenfunctions 
     """
-    def __init__(self, kern_list, grid, n_eigs=1000, dim_noise_var=1e-12, **kwargs):
+    def __init__ (self, kern_list, grid, n_eigs=1000, dim_noise_var=1e-12, **kwargs):
         """
         Inputs:
             kern_list : list of 1d kernels
@@ -36,7 +36,7 @@ class GriefKernel (GridKernel):
         self._old_base_kern_params = None
 
 
-    def cov(self, x, z=None):
+    def K (self, x, z=None):
         """
         Returns everything needed for covariance matrix and its inverse, etc.
         Note that z should generally not be specified, you can save work by just 
@@ -57,15 +57,15 @@ class GriefKernel (GridKernel):
         """
         assert x.shape[1] == self.n_dims
         if z is not None: # then computing cross cov matrix
-            Phi_L = self.cov(x=x)[0]
-            Phi_R = self.cov(x=z)[0]
+            Phi_L = self.K(x=x)[0]
+            Phi_R = self.K(x=z)[0]
         else:
             # setup inducing covariance matrix and eigenvals/vecs
             self._setup_inducing_cov()
 
             # compute the left coefficient matrix
             # first get the cross covariance matrix
-            Kxu = super(GriefKernel,self).cov_kr(x=x,z=self.grid.xg,form_kr=False)
+            Kxu = super(GriefKernel,self).K_kr(x=x,z=self.grid.xg,form_kr=False)
             Kux = [k.T for k in Kxu]
 
             # form the RowColKhatriRaoMatrix 
@@ -75,6 +75,21 @@ class GriefKernel (GridKernel):
             # compute the left coefficient matrix (which is identical)
             Phi_R = Phi_L
         return Phi_L, self.w, Phi_R
+
+    def dK_dX (x, grad_dim):
+        """
+        Computes d Phi_L / d x_{:,grad_dim}
+        """
+        m_grief.kern._setup_inducing_cov()
+        # compute the left coefficient matrix
+        # first get the cross covariance matrix
+        dKxu = dK_kr_dX(x, self.grid.xg, grad_dim)
+        dKux = [k.T for k in dKxu]
+
+        # form the RowColKhatriRaoMatrix 
+        log_matrix, sign = expand_SKC(S=self._Sp, K=self._Quu.T.K, C=dKux)
+        dPhi = sign.T * np.exp(log_matrix.T - 0.5*self._log_lam.reshape((1,-1)))
+        return dPhi
 
     @property
     def parameters(self):
@@ -128,7 +143,7 @@ class GriefKernel (GridKernel):
             return # then no need to recompute
 
         # get the covariance matrix on the grid
-        Kuu = self.cov_grid(self.grid.xg, dim_noise_var=self.dim_noise_var)
+        Kuu = self.K_grid(self.grid.xg, dim_noise_var=self.dim_noise_var)
 
         # compute svd of Kuu
         (self._Quu,T) = Kuu.schur()

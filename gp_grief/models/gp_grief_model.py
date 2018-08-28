@@ -62,7 +62,7 @@ class GPGriefModel (BaseModel):
         if self._alpha is not None: # check if alpha is already computed
             return
         self._cov_setup()
-        self._alpha = self._mv_cov_inv(self.Y)
+        self._alpha = self._mv_K_inv(self.Y)
 
 
     def predict(self, Xnew):
@@ -86,7 +86,7 @@ class GPGriefModel (BaseModel):
 
         # get cross covariance between training and testing points
         if self._Phi_last_pred is None or not np.array_equal(Xnew,self._X_last_pred):
-            self._Phi_last_pred = self.kern.cov(x=Xnew)[0]
+            self._Phi_last_pred = self.kern.K(x=Xnew)[0]
             self._X_last_pred = Xnew
 
         # predict the mean at the test points
@@ -110,7 +110,7 @@ class GPGriefModel (BaseModel):
 
         # get the p x p matrix A if ness
         if self._A is None: # then compute, note this is expensive
-            self._Phi = self.kern.cov(self.X)[0]
+            self._Phi = self.kern.K(self.X)[0]
             self._A = self._Phi.T.dot(self._Phi) # O(np^2) operation!
 
         # compute the P matrix and factorize
@@ -127,15 +127,15 @@ class GPGriefModel (BaseModel):
         # fit the model 
         self.fit()
         # compute the log likelihood
-        log_like = -0.5 * (self.Y.T.dot(self._alpha) + self._cov_log_det()\
+        log_like = -0.5 * (self.Y.T.dot(self._alpha) + self._K_log_det()\
                             + self.num_data*np.log(np.pi*2))
         return log_like
 
 
-    def _mv_cov(self, x):
+    def _mv_K(self, x):
         """ 
         matrix vector product with shifted covariance matrix. 
-        To get full cov, do `_mv_cov(np.identity(n))` 
+        To get full cov, do `_mv_K(np.identity(n))` 
         """
         assert x.shape[0] == self.num_data
         assert self._Phi is not None, "cov has not been setup"
@@ -143,7 +143,7 @@ class GPGriefModel (BaseModel):
                 + x * self.noise_var
 
 
-    def _mv_cov_inv(self, x):
+    def _mv_K_inv(self, x):
         """ 
         matrix vector product with shifted covariance inverse 
         """
@@ -153,7 +153,7 @@ class GPGriefModel (BaseModel):
                 /self.noise_var
 
 
-    def _cov_log_det(self):
+    def _K_log_det(self):
         """ 
         compute covariance log determinant 
         """

@@ -6,7 +6,7 @@ from gp_grief.kern import BaseKernel
 class Stationary (BaseKernel):
     """ base class for stationary kernels """
 
-    def distances_squared(self, x, z=None, lengthscale=None):
+    def distances_squared (self, x, z=None, lengthscale=None):
         """
         Evaluate the distance between points squared.
 
@@ -40,7 +40,7 @@ class Stationary (BaseKernel):
                       axis=2, keepdims=False)
 
 
-    def distances(self, x, z=None, lengthscale=None):
+    def distances (self, x, z=None, lengthscale=None):
         """
         Evaluate the distance between points along each dimension
 
@@ -77,7 +77,7 @@ class RBF (Stationary):
     """
     squared exponential kernel with the same shape parameter in each dimension
     """
-    def __init__(self,n_dims,variance=1.,lengthscale=1.,active_dims=None,name=None):
+    def __init__ (self,n_dims,variance=1.,lengthscale=1.,active_dims=None,name=None):
         """
         squared exponential kernel
 
@@ -101,7 +101,7 @@ class RBF (Stationary):
         self.constraint_map = {'variance':'+ve', 'lengthscale':'+ve'}
 
 
-    def cov(self,x,z=None,lengthscale=None):
+    def K (self,x,z=None,lengthscale=None):
         """
         Evaluate covariance kernel at points to form a covariance matrix
 
@@ -129,7 +129,7 @@ class RBF (Stationary):
 
 
 class Exponential (Stationary):
-    def __init__(self,n_dims,variance=1.,lengthscale=1.,active_dims=None,name=None):
+    def __init__ (self,n_dims,variance=1.,lengthscale=1.,active_dims=None,name=None):
         """
         squared exponential kernel
 
@@ -151,7 +151,7 @@ class Exponential (Stationary):
         self.constraint_map = {'variance':'+ve', 'lengthscale':'+ve'}
 
 
-    def cov(self,x,z=None):
+    def K (self,x,z=None):
         """
         Evaluate covariance kernel at points to form a covariance matrix
 
@@ -169,7 +169,7 @@ class Exponential (Stationary):
 
 
 class Matern32 (Stationary):
-    def __init__(self,n_dims,variance=1.,lengthscale=1.,active_dims=None,name=None):
+    def __init__ (self,n_dims,variance=1.,lengthscale=1.,active_dims=None,name=None):
         """
         squared exponential kernel
 
@@ -191,7 +191,7 @@ class Matern32 (Stationary):
         self.constraint_map = {'variance':'+ve', 'lengthscale':'+ve'}
 
 
-    def cov(self,x,z=None):
+    def K (self,x,z=None):
         """
         Evaluate covariance kernel at points to form a covariance matrix
 
@@ -209,7 +209,7 @@ class Matern32 (Stationary):
 
 
 class Matern52 (Stationary):
-    def __init__(self,n_dims,variance=1.,lengthscale=1.,active_dims=None,name=None):
+    def __init__ (self,n_dims,variance=1.,lengthscale=1.,active_dims=None,name=None):
         """
         squared exponential kernel
 
@@ -231,7 +231,7 @@ class Matern52 (Stationary):
         self.constraint_map = {'variance':'+ve', 'lengthscale':'+ve'}
 
 
-    def cov(self,x,z=None):
+    def K (self,x,z=None):
         """
         Evaluate covariance kernel at points to form a covariance matrix
 

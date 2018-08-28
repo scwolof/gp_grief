@@ -47,7 +47,7 @@ class GridKernel (object):
         return
 
 
-    def cov_grid(self, x, z=None, dim_noise_var=None, use_toeplitz=False):
+    def K_grid(self, x, z=None, dim_noise_var=None, use_toeplitz=False):
         """
         generate matrix, creates covariance matrix mapping between x1 and x2.
 
@@ -94,9 +94,9 @@ class GridKernel (object):
         # loop through and generate the covariance matricies
         for i,(kern, toeplitz) in enumerate(zip(self.kern_list, use_toeplitz)): 
             if toeplitz and z[i] is None:
-                K.append(kern.cov_toeplitz(x=x[i]))
+                K.append(kern.K_toeplitz(x=x[i]))
             else:
-                K.append(kern.cov(x=x[i],z=z[i]))
+                K.append(kern.K(x=x[i],z=z[i]))
 
         # now create a KronMatrix instance
         # reverse order and set as symmetric only if the two lists are identical
@@ -109,7 +109,7 @@ class GridKernel (object):
         return K
 
 
-    def cov(self,x,z=None, dim_noise_var=None):
+    def K (self, x, z=None):
         """
         Evaluate covariance kernel at points to form a covariance matrix
 
@@ -120,8 +120,6 @@ class GridKernel (object):
         Outputs:
             k : matrix of shape (N, M)
         """
-        assert dim_noise_var is None, "currenly no way to add dim_noise_var"
-
         # loop through dimensions, compute cov and perform hadamard product
         i_cur = 0
         zi = None # set default value
@@ -133,13 +131,13 @@ class GridKernel (object):
 
             # compute cov of subset of dimensions and multipy with other dimensions
             if i == 0:
-                K = kern.cov(x=xi,z=zi)
+                K = kern.K(x=xi,z=zi)
             else: # perform hadamard product
-                K = np.multiply(K, kern.cov(x=xi,z=zi))
+                K = np.multiply(K, kern.K(x=xi,z=zi))
         return K
 
 
-    def cov_kr(self,x,z, dim_noise_var=None, form_kr=True):
+    def K_kr (self, x, z, form_kr=True):
         """
         Evaluate covariance kernel at points to form a covariance matrix in 
         row partitioned Khatri-Rao form
@@ -156,13 +154,12 @@ class GridKernel (object):
         Outputs:
             k : row partitioned Khatri-Rao matrix of shape (N, prod(n_mesh))
         """
-        assert dim_noise_var is None, "currenly no way to add dim_noise_var"
-        (N,d) = x.shape
-        assert self.grid_dim == d, "currently only works for 1-dimensional grids"
+        N, d = x.shape
+        assert self.grid_dim == d, "currently works for 1-dimensional grids"
 
         # loop through dimensions and compute covariance matricies
         # and compute the covariance of the subset of dimensions
-        Kxz = [kern.cov(x=x[:,(i,)],z=z[i]) for i,kern in enumerate(self.kern_list)]
+        Kxz = [kern.K(x=x[:,(i,)],z=z[i]) for i,kern in enumerate(self.kern_list)]
 
         # flip the order
         Kxz = Kxz[::-1]
@@ -170,6 +167,31 @@ class GridKernel (object):
         # convert to a Khatri-Rao Matrix
         if form_kr:
             Kxz = KhatriRaoMatrix(A=Kxz, partition=0) # row partitioned
+        return Kxz
+
+    def dK_kr_dX (self, x, z, grad_dim):
+        """
+        Gradient of K_kr wrt grad_dim'th dimension of x
+        """
+        N, d = x.shape
+        assert self.grid_dim == d
+
+        kern_list = m_grief.kern.kern_list
+        # loop through each dimension and compute the 1-dimensional covariance 
+        # matricies and compute the covariance of the subset of dimensions
+        Kxz = []
+        for i, k in enumerate(kern_list):
+            if i == grad_dim:
+                Ui, n = z[i], z[i].shape[0]
+                t = np.zeros((N,n))
+                for j in range(n):
+                    t[:,[j]] = k.kern.gradients_X(1, x[:,(i,)], Ui[[j]])
+            else:
+                t = k.K(x=x[:,(i,)],z=z[i])
+            Kxz.append(t)
+            
+        # flip the order
+        Kxz = Kxz[::-1]
         return Kxz
 
     @property
@@ -223,4 +245,4 @@ class GridKernel (object):
         return diagonal value of covariance matrix. 
         Note that it's assumed the kernel is stationary 
         """
-        return self.cov(np.zeros((1,self.n_dims))).squeeze()
+        return self.K(np.zeros((1,self.n_dims))).squeeze()

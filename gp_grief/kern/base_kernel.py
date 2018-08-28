@@ -27,19 +27,11 @@ class BaseKernel (object):
         self._children = [] # contains the children kernels (form __mul__ and __add__)
 
 
-    def cov (self,x,z=None):
+    def K (self,x,z=None):
         """
         Evaluate covariance kernel at points to form a covariance matrix
-
-        Inputs:
-            x : array of shape (N, d)
-            z : array of shape (M, d) (optional). If not specified then will assume z=x
-
-        Outputs:
-            k : matrix of shape (N, M)
         """
-        x,z = self._process_cov_inputs(x,z) # process inputs
-        raise NotImplementedError('Not implemented')
+        raise NotImplementedError
 
     @property
     def parameters (self):
@@ -145,9 +137,9 @@ class BaseKernel (object):
         """
         for operation,child in self._children:
             if operation == 'mul':
-                K = np.multiply(K, child.cov(x, z))
+                K = np.multiply(K, child.K(x, z))
             elif operation == 'add':
-                K = np.add(     K, child.cov(x, z))
+                K = np.add(     K, child.K(x, z))
             else:
                 raise ValueError('Unknown kernel operation %s' % repr(operation))
         return K
