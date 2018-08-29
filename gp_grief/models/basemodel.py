@@ -14,19 +14,19 @@ class BaseModel (object):
     param_shift = {'+ve':1e-200, '-ve':-1e-200} 
     _transformations = {'+ve':LogexpTransformation()}
 
-    def __init__(self):
+    def __init__ (self):
         """ initialize a few instance variables """
         self.dependent_attributes = ['_alpha',
                                      '_log_like',
-                                     '_gradient','_K',
+                                     '_gradient',
+                                     '_K',
                                      '_log_det']
         self._previous_parameters = None # previous parameters from last call
         #self.grad_method = None # could be {'finite_difference','adjoint'}
         self.noise_var_constraint = '+ve' # Gaussian noise variance constraint
-        return
 
 
-    def log_likelihood(self, return_gradient=False):
+    def log_likelihood (self, return_gradient=False):
         """
         computes the log likelihood and the gradient (if not already computed).
 
@@ -54,8 +54,8 @@ class BaseModel (object):
             return self._log_like
 
 
-    def optimize(self, max_iters=1e3, messages=False, use_counter=False,\
-                factr=1e7, pgtol=1e-05):
+    def optimize (self, max_iters=1e3, messages=False, use_counter=False,\
+                    factr=1e7, pgtol=1e-05):
         """
         maximize the log likelihood
 
@@ -95,7 +95,7 @@ class BaseModel (object):
         return opt
 
 
-    def checkgrad(self, decimal=3, raise_if_fails=True):
+    def checkgrad (self, decimal=3, raise_if_fails=True):
         """
         checks the gradient and raises if does not pass
         """
@@ -126,7 +126,7 @@ class BaseModel (object):
             return True
 
     @property
-    def parameters(self):
+    def parameters (self):
         """
         this gets the parameters from the object attributes
         """
@@ -143,7 +143,7 @@ class BaseModel (object):
         return parameters.copy()
 
     @parameters.setter
-    def parameters(self,parameters):
+    def parameters (self,parameters):
         """
         takes optimization variable parameters and sets the internal state of
         self to make it consistent with the variables
@@ -162,30 +162,30 @@ class BaseModel (object):
         return parameters
 
     @property
-    def constraints(self):
+    def constraints (self):
         """ returns the model parameter constraints as a list """
         constraints = np.concatenate( (np.ravel(self.noise_var_constraint), 
                                        self.kern.constraints), axis=0)
         return constraints
 
 
-    def predict(self, Xnew, compute_var=None):
+    def predict (self, Xnew, compute_var=None):
         """
         make predictions at new points
         MUST begin with call to parameters property
         """
-        raise NotImplementedError('')
+        raise NotImplementedError
 
 
-    def fit(self):
+    def fit (self):
         """
         determines the weight vector _alpha
         MUST begin with a call to parameters property
         """
-        raise NotImplementedError('')
+        raise NotImplementedError
 
 
-    def _objective_grad(self, transformed_free_parameters):
+    def _objective_grad (self, transformed_free_parameters):
         """ 
         determines the objective and gradients in the transformed input space 
         """
@@ -215,7 +215,7 @@ class BaseModel (object):
         return objective, free_gradient
 
     @property
-    def _fixed_indicies(self):
+    def _fixed_indicies (self):
         """ 
         returns a bool array specifiying where the indicies are fixed 
         """
@@ -223,14 +223,14 @@ class BaseModel (object):
         return fixed_inds
 
     @property
-    def _free_indicies(self):
+    def _free_indicies (self):
         """ 
         returns a bool array specifiying where the indicies are free 
         """
         return np.logical_not(self._fixed_indicies)
 
 
-    def _transform_parameters(self, parameters):
+    def _transform_parameters (self, parameters):
         """
         applies a transformation to the parameters based on a constraint
         """
@@ -247,7 +247,7 @@ class BaseModel (object):
         return transformed_parameters
 
 
-    def _transform_gradient(self, parameters, gradients):
+    def _transform_gradient (self, parameters, gradients):
         """
         see _transform parameters
         """
@@ -265,7 +265,7 @@ class BaseModel (object):
         return transformed_grads
 
 
-    def _untransform_parameters(self, transformed_parameters):
+    def _untransform_parameters (self, transformed_parameters):
         """ 
         applies a reverse transformation to the parameters given constraints
         """
@@ -282,7 +282,7 @@ class BaseModel (object):
         return parameters
 
 
-    def _finite_diff_gradient(self, parameters):
+    def _finite_diff_gradient (self, parameters):
         """
         helper function to compute function gradients by finite difference.
 
@@ -318,7 +318,7 @@ class BaseModel (object):
         return log_like, gradient
 
 
-    def _compute_log_likelihood(self, parameters):
+    def _compute_log_likelihood (self, parameters):
         """
         helper function to compute log likelihood.
         Inputs:
@@ -329,8 +329,4 @@ class BaseModel (object):
         Outputs:
             log_likelihood
         """
-        raise NotImplementedError('')
-
-
-    def _adjoint_gradient(self,parameters):
-        raise NotImplementedError('')
+        raise NotImplementedError
