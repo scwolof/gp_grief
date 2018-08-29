@@ -22,7 +22,6 @@ class BaseModel (object):
                                      '_K',
                                      '_log_det']
         self._previous_parameters = None # previous parameters from last call
-        #self.grad_method = None # could be {'finite_difference','adjoint'}
         self.noise_var_constraint = '+ve' # Gaussian noise variance constraint
 
 
@@ -36,22 +35,13 @@ class BaseModel (object):
 
         # check if I need to recompute anything
         if return_gradient and (self._gradient is None):
-            # compute the log likelihood and gradient wrt the parameters
-            #if 'adjoint' in self.grad_method:
-            #    (self._log_like, self._gradient) = self._adjoint_gradient(p)
-            #elif 'finite_difference' in self.grad_method:
-            (self._log_like, self._gradient) = self._finite_diff_gradient(p)
-            #else:
-            #    raise RuntimeError('unknown grad_method %s' % repr(self.grad_method))
+            self._log_like, self._gradient = self._finite_diff_gradient(p)
         elif self._log_like is None: # compute the log-likelihood without gradient
             self._log_like = self._compute_log_likelihood(p)
-        else: # everything is already computed
-            pass
 
         if return_gradient: # return both
             return self._log_like, self._gradient
-        else: # just return likelihood
-            return self._log_like
+        return self._log_like
 
 
     def optimize (self, max_iters=1e3, messages=False, use_counter=False,\
@@ -100,7 +90,7 @@ class BaseModel (object):
         checks the gradient and raises if does not pass
         """
         grad_exact = self._finite_diff_gradient(self.parameters)[1]
-        grad_exact[self._fixed_indicies] = 1 # gradients of fixed variables
+        grad_exact[self._fixed_indicies]    = 1 # gradients of fixed variables
         grad_analytic = self.log_likelihood(return_gradient=True)[1]
         grad_analytic[self._fixed_indicies] = 1 # gradients of fixed variables
 
@@ -120,10 +110,8 @@ class BaseModel (object):
         except:
             if raise_if_fails:
                 raise
-            else:
-                return False
-        else:
-            return True
+            return False
+        return True
 
     @property
     def parameters (self):
@@ -145,7 +133,7 @@ class BaseModel (object):
     @parameters.setter
     def parameters (self,parameters):
         """
-        takes optimization variable parameters and sets the internal state of
+        Takes optimization variable parameters and sets the internal state of
         self to make it consistent with the variables
         """
         # set the parameters internally
@@ -163,7 +151,9 @@ class BaseModel (object):
 
     @property
     def constraints (self):
-        """ returns the model parameter constraints as a list """
+        """ 
+        Returns the model parameter constraints as a list 
+        """
         constraints = np.concatenate( (np.ravel(self.noise_var_constraint), 
                                        self.kern.constraints), axis=0)
         return constraints
@@ -171,7 +161,7 @@ class BaseModel (object):
 
     def predict (self, Xnew, compute_var=None):
         """
-        make predictions at new points
+        Make predictions at new points
         MUST begin with call to parameters property
         """
         raise NotImplementedError
@@ -179,7 +169,7 @@ class BaseModel (object):
 
     def fit (self):
         """
-        determines the weight vector _alpha
+        Determines the weight vector _alpha
         MUST begin with a call to parameters property
         """
         raise NotImplementedError
@@ -187,7 +177,7 @@ class BaseModel (object):
 
     def _objective_grad (self, transformed_free_parameters):
         """ 
-        determines the objective and gradients in the transformed input space 
+        Determines the objective and gradients in the transformed input space 
         """
         # get the fixed indices and add to the transformed parameters
         free = np.logical_not(self._fixed_indicies)
@@ -217,7 +207,7 @@ class BaseModel (object):
     @property
     def _fixed_indicies (self):
         """ 
-        returns a bool array specifiying where the indicies are fixed 
+        Returns a bool array specifiying where the indicies are fixed 
         """
         fixed_inds = self.constraints == 'fixed'
         return fixed_inds
@@ -225,14 +215,14 @@ class BaseModel (object):
     @property
     def _free_indicies (self):
         """ 
-        returns a bool array specifiying where the indicies are free 
+        Returns a bool array specifiying where the indicies are free 
         """
         return np.logical_not(self._fixed_indicies)
 
 
     def _transform_parameters (self, parameters):
         """
-        applies a transformation to the parameters based on a constraint
+        Applies a transformation to the parameters based on a constraint
         """
         constraints = self.constraints
         assert parameters.size == np.size(constraints) # check if sizes correct
@@ -249,7 +239,7 @@ class BaseModel (object):
 
     def _transform_gradient (self, parameters, gradients):
         """
-        see _transform parameters
+        See _transform parameters
         """
         constraints = self.constraints
         assert parameters.size == gradients.size == np.size(constraints)
@@ -267,7 +257,7 @@ class BaseModel (object):
 
     def _untransform_parameters (self, transformed_parameters):
         """ 
-        applies a reverse transformation to the parameters given constraints
+        Applies a reverse transformation to the parameters given constraints
         """
         assert transformed_parameters.size == np.size(self.constraints)
         parameters = np.zeros(transformed_parameters.size)
@@ -284,7 +274,7 @@ class BaseModel (object):
 
     def _finite_diff_gradient (self, parameters):
         """
-        helper function to compute function gradients by finite difference.
+        Helper function to compute function gradients by finite difference.
 
         Inputs:
             parameters : 1d array
@@ -320,7 +310,7 @@ class BaseModel (object):
 
     def _compute_log_likelihood (self, parameters):
         """
-        helper function to compute log likelihood.
+        Helper function to compute log likelihood.
         Inputs:
             parameters : 1d array
                 whose first element is the Gaussian noise and the other 
