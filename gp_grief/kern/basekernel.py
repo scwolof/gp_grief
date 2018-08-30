@@ -153,31 +153,7 @@ class BaseKernel(object):
             else:
                 raise ValueError('Unknown kernel operation %s' % repr(operation))
         return K
-
-
-    def __str__(self):
-        """
-        this is what is used when being printed
-        """
-        from tabulate import tabulate
-        # print the parent
-        s = '\n'
-        s += "%s kernel\n" % self.name
-        if isinstance(self, GPyKernel): # do this in a custom way
-            s += str(tabulate([[param._name, param.values, constraint]
-                               for (param, constraint) in zip(self.kern.flattened_parameters, self.constraint_list)],
-                              headers=['Name', 'Value', 'Constraint'], tablefmt='orgtbl'))
-        else: # tabulate the reuslts
-            s += str(tabulate([[name, getattr(self, name), self.constraint_map[name]] for name in self.parameter_list],
-                              headers=['Name', 'Value', 'Constraint'], tablefmt='orgtbl'))
-
-        # now print the children
-        for i,(operation,child) in enumerate(self._children):
-            s += '\n\n%s with child:\n' % operation # don't add a new line here since the child will print one
-            s += str(child)#.replace('\n', '\n' + '  ' * (i+1))
-        s += '\n'
-        return s
-
+        
 
     def __mul__(k1,k2):
         """

@@ -1,5 +1,5 @@
 
-from .base_kernel import BaseKernel
+from .basekernel import BaseKernel
 
 from .gpy_kernel import GPyKernel
 from .stationary import Stationary, RBF, Exponential, Matern32, Matern52
