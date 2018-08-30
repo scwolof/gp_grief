@@ -86,8 +86,17 @@ class GPGriefModel (BaseModel):
         self._cov_setup()
         self._alpha = self._mv_cov_inv(self.Y)
 
+    def predict_precompute (self, Xnew):
+        logger.debug('Predicting model at new points.')
+        assert Xnew.ndim == 2
+        assert Xnew.shape[1] == self.input_dim
+        self.parameters # ensure that the internal state is consistent!
+        if self._alpha is None: # then I need to train
+            self.fit()
+        if self._alpha_p is None: # compute so future calcs can be done in O(p)
+            self._alpha_p = self._Phi.T.dot(self._alpha)*self.kern.w.reshape((-1,1))
 
-    def predict(self, Xnew):
+    def predict (self, Xnew):
         """
         make predictions at new points
 
@@ -98,14 +107,7 @@ class GPGriefModel (BaseModel):
             Yhat : (M,1) numpy array predictions at Xnew
             Yhatvar : only returned if compute_var is not None. See compute_var
         """
-        logger.debug('Predicting model at new points.')
-        assert Xnew.ndim == 2
-        assert Xnew.shape[1] == self.input_dim
-        self.parameters # ensure that the internal state is consistent!
-        if self._alpha is None: # then I need to train
-            self.fit()
-        if self._alpha_p is None: # compute so future calcs can be done in O(p)
-            self._alpha_p = self._Phi.T.dot(self._alpha)*self.kern.w.reshape((-1,1))
+        self.predict_precompute(Xnew)
 
         # get cross covariance between training and testing points
         if self._Phi_last_pred is None or not np.array_equal(Xnew,self._X_last_pred):
@@ -120,7 +122,16 @@ class GPGriefModel (BaseModel):
         Yhatvar = self.noise_var * self._Phi_last_pred.dot(\
                             cho_solve(self._Pchol, self._Phi_last_pred.T))\
                   + self.noise_var * np.eye(Xnew.shape[0]) # see 2.11 of GPML
-        return Yhat,Yhatvar
+        return Yhat, Yhatvar
+
+    def d_Yhat_d_x (self, Xnew, dim):
+        """
+        Computes d Yhat / d x{:,dim}
+        """
+        self.predict_precompute(Xnew)
+        dPhi = self.kern.cov_grad(Xnew, dim)
+        # predict the mean at the test points
+        return dPhi.dot(self._alpha_p)
 
 
     def _cov_setup(self):
