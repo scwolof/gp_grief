@@ -231,7 +231,6 @@ class BaseModel (object):
             gradient = self._transform_gradient(self.parameters, gradient)
         except (LinAlgError, ZeroDivisionError, ValueError):
             logger.error('numerical issue computing log-likelihood or gradient')
-            logger.debug('Model where failure occured:\n' + self.__str__())
             raise
         # get rid of the gradients of the fixed parameters
         free_gradient = gradient[free]
@@ -379,16 +378,3 @@ class BaseModel (object):
     def _adjoint_gradient(self,parameters):
         raise NotImplementedError('')
         return log_like, gradient
-
-
-    def __str__(self):
-        from tabulate import tabulate
-        s = '\n%s Model\n' % self.__class__.__name__
-
-        # print the  noise_var stuff
-        s += str(tabulate([['noise_var',self.noise_var,self.noise_var_constraint]],
-                headers=['Name', 'Value', 'Constraint'], tablefmt='orgtbl'))+'\n'
-
-        # print the kernel stuff
-        s += str(self.kern)
-        return s
