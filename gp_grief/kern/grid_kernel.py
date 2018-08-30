@@ -2,6 +2,7 @@
 import numpy as np
 from itertools import product
 from gp_grief.tensors import KronMatrix, KhatriRaoMatrix
+from gp_grief.kern import GPyKernel
 
 import logging
 logger = logging.getLogger(__name__)
@@ -11,7 +12,7 @@ class GridKernel (object):
     """ 
     Simple kernel wrapper for GridRegression which is a product of 1d kernels 
     """
-    def __init__(self, kern_list, radial_kernel=False):
+    def __init__ (self, kern_list, radial_kernel=False):
         """
         Kernel for gridded inducing point methods and structured problems
 
@@ -52,7 +53,7 @@ class GridKernel (object):
         return
 
 
-    def cov_grid(self, x, z=None, dim_noise_var=None, use_toeplitz=False):
+    def cov_grid (self, x, z=None, dim_noise_var=None, use_toeplitz=False):
         """
         generate matrix, creates covariance matrix mapping between x1 and x2.
 
@@ -114,7 +115,7 @@ class GridKernel (object):
         return K
 
 
-    def cov(self,x,z=None, dim_noise_var=None):
+    def cov (self,x,z=None, dim_noise_var=None):
         """
         Evaluate covariance kernel at points to form a covariance matrix
 
@@ -144,7 +145,7 @@ class GridKernel (object):
         return K
 
 
-    def cov_kr(self,x,z, dim_noise_var=None, form_kr=True):
+    def cov_kr (self, x, z, dim_noise_var=None, form_kr=True):
         """
         Evaluate covariance kernel at points to form a covariance matrix in 
         row partitioned Khatri-Rao form
@@ -177,8 +178,35 @@ class GridKernel (object):
             Kxz = KhatriRaoMatrix(A=Kxz, partition=0) # row partitioned
         return Kxz
 
+    def cov_kr_grad (self, x, z, grad_dim):
+        """
+        Gradient of cov_kr wrt grad_dim'th dimension of x
+        """
+        N, d = x.shape
+        assert self.grid_dim == d
+
+        # loop through each dimension and compute the 1-dimensional covariance 
+        # matricies and compute the covariance of the subset of dimensions
+        Kxz = []
+        for i, k in enumerate(self.kern_list):
+            if i == grad_dim:
+                n = z[i].shape[0]
+                t = np.zeros((N,n))
+                for j in range(n):
+                    if isinstance(k, GPyKernel):
+                        t[:,[j]] = k.kern.gradients_X(1, x[:,(i,)], z[i][[j]])
+                    else:
+                        raise NotImplementedError
+            else:
+                t = k.cov(x=x[:,(i,)],z=z[i])
+            Kxz.append(t)
+            
+        # flip the order
+        Kxz = Kxz[::-1]
+        return Kxz
+
     @property
-    def parameters(self):
+    def parameters (self):
         """
         returns the kernel parameters as a 1d array
         """
@@ -190,7 +218,7 @@ class GridKernel (object):
         return parameters
 
     @parameters.setter
-    def parameters(self, value):
+    def parameters (self, value):
         """
         setter for parameters property
         """
@@ -211,7 +239,7 @@ class GridKernel (object):
                 i0 += np.size(old) # increment counter
 
     @property
-    def constraints(self):
+    def constraints (self):
         """
         returns the kernel parameters' constraints as a 1d array
         """
@@ -223,23 +251,9 @@ class GridKernel (object):
         return constraints
 
     @property
-    def diag_val(self):
+    def diag_val (self):
         """ 
         return diagonal value of covariance matrix. 
         Note that it's assumed the kernel is stationary 
         """
         return self.cov(np.zeros((1,self.n_dims))).squeeze()
-
-
-    def __str__(self):
-        """ prints the kernel """
-        s = '\nGridKernel'
-        if self.radial_kernel:
-            s += " Radial (same kern along all dimensions)\n"
-            s += str(self.kern_list[0]) + '\n'
-        else:
-            for i,child in enumerate(self.kern_list):
-                s += '\nGrid Dimension %d' % i
-                s += str(child) + '\n'
-        return s
-

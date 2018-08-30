@@ -91,22 +91,38 @@ class GriefKernel (GridKernel):
         else:
             # setup inducing covariance matrix and eigenvals/vecs
             self._setup_inducing_cov()
-
             # compute the left coefficient matrix
             # first get the cross covariance matrix
             Kxu = super(GriefKernel,self).cov_kr(x=x,z=self.grid.xg,form_kr=False)
             Kux = [k.T for k in Kxu]
 
             # form the RowColKhatriRaoMatrix 
+            SKC    = {'S':self._Sp, 'K':self._Quu.T.K, 'C':Kux}
+            loglam = self._log_lam.reshape((1,-1))
             if self.log_KRrowcol: # form and rescale in a numerically stable manner
-                log_matrix, sign = expand_SKC(S=self._Sp, K=self._Quu.T.K, C=Kux, logged=True)
-                Phi_L = sign.T * np.exp(log_matrix.T - 0.5*self._log_lam.reshape((1,-1)))
+                log_matrix, sign = expand_SKC(**SKC, logged=True)
+                Phi_L = sign.T * np.exp(log_matrix.T - 0.5*loglam)
             else:
-                Phi_L = expand_SKC(S=self._Sp, K=self._Quu.T.K, C=Kux, logged=False).T / np.sqrt(np.exp(self._log_lam.reshape((1,-1))))
+                Phi_L = expand_SKC(**SKC, logged=False).T/np.sqrt(np.exp(loglam))
 
             # compute the left coefficient matrix (which is identical)
             Phi_R = Phi_L
         return Phi_L, self.w, Phi_R
+
+    def cov_grad (self, x, grad_dim):
+        """
+        Computes d Phi_L / d x_{:,grad_dim}
+        """
+        self._setup_inducing_cov()
+        # compute the left coefficient matrix
+        # first get the cross covariance matrix
+        dKxu = self.cov_kr_grad(x, self.grid.xg, grad_dim)
+        dKux = [k.T for k in dKxu]
+
+        # form the RowColKhatriRaoMatrix 
+        log_matrix, sign = expand_SKC(S=self._Sp, K=self._Quu.T.K, C=dKux)
+        dPhi = sign.T * np.exp(log_matrix.T - 0.5*self._log_lam.reshape((1,-1)))
+        return dPhi
 
     @property
     def parameters(self):
@@ -171,25 +187,3 @@ class GriefKernel (GridKernel):
 
         # save the parameters
         self._old_base_kern_params = base_kern_params
-
-
-    def __str__(self):
-        """ prints the kernel """
-        s = '\nGriefKernel'
-        if self.radial_kernel:
-            s += " Radial (same kern along all dimensions)\n"
-            s += str(self.kern_list[0]) + '\n'
-        else:
-            for i,child in enumerate(self.kern_list):
-                s += '\nGrid Dimension %d' % i
-                s += str(child) + '\n'
-
-        # now print the weights
-        from tabulate import tabulate
-        s += "Eigenfunction Weights:\n"
-        s += str(tabulate([["weight %03d"%i, w, wm_lam, constraint]
-                           for i,(w, wm_lam, constraint) in enumerate(zip(self.w, np.exp(np.log(self.w) - self._log_lam + np.log(self.grid.num_data)), self.w_constraints))],
-                          headers=['Name', 'w Value', 'w*m/lam Value', 'Constraint'], tablefmt='orgtbl'))
-        # Note that we multiply w/lam times m because the inner products involved in the eigenfunctions sum up huge vectors of length m so the quotient would be washed out without this
-        s += '\n'
-        return s
