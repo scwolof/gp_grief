@@ -97,13 +97,14 @@ class GriefKernel (GridKernel):
             Kux = [k.T for k in Kxu]
 
             # form the RowColKhatriRaoMatrix 
-            SKC    = {'S':self._Sp, 'K':self._Quu.T.K, 'C':Kux}
+            SKC    = {}
             loglam = self._log_lam.reshape((1,-1))
             if self.log_KRrowcol: # form and rescale in a numerically stable manner
-                log_matrix, sign = expand_SKC(**SKC, logged=True)
+                log_matrix, sign = expand_SKC(S=self._Sp,K=self._Quu.T.K,C=Kux,logged=True)
                 Phi_L = sign.T * np.exp(log_matrix.T - 0.5*loglam)
             else:
-                Phi_L = expand_SKC(**SKC, logged=False).T/np.sqrt(np.exp(loglam))
+                Phi_L = expand_SKC(S=self._Sp,K=self._Quu.T.K,C=Kux,logged=False).T\
+                                    /np.sqrt(np.exp(loglam))
 
             # compute the left coefficient matrix (which is identical)
             Phi_R = Phi_L
